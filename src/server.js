@@ -16,8 +16,8 @@ server.on("message", (msg, rinfo) => {
     const authorityCount = msg.readUInt16BE(8);
     const additionalCount = msg.readUInt16BE(10);
 
-    console.log(`Transaction ID: ${transactionId}`);
-    console.log(`Flags: ${flags}`);
+    console.log(`Transaction ID: ${transactionId.toString(2)}`);
+    console.log(`Flags: ${flags.toString(2)}`);
     console.log(`Question Count: ${questionCount}`);
     console.log(`Answer Count: ${answerCount}`);
     console.log(`Authority Count: ${authorityCount}`);
@@ -29,9 +29,6 @@ server.on("message", (msg, rinfo) => {
 
     while (msg[offset] !== 0x00) {
       const length = msg[offset];
-      if (offset + length >= msg.length) {
-        throw new Error("Buffer overrun detected while parsing domain name");
-      }
       domainParts.push(msg.toString("utf-8", offset + 1, offset + 1 + length));
       offset += length + 1;
     }
