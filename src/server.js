@@ -1,4 +1,5 @@
 const dgram = require("dgram");
+const { off } = require("process");
 const server = dgram.createSocket("udp4");
 
 server.on("message", (msg, rinfo) => {
@@ -7,6 +8,7 @@ server.on("message", (msg, rinfo) => {
   console.log(`Buffer Length: `, msg.length);
 
   try {
+    //parsing of header
     const transactionId = msg.readUint16BE(0);
     const flags = msg.readUint16BE(2);
     const questionCount = msg.readUInt16BE(4);
@@ -20,6 +22,31 @@ server.on("message", (msg, rinfo) => {
     console.log(`Answer Count: ${answerCount}`);
     console.log(`Authority Count: ${authorityCount}`);
     console.log(`Additional Count: ${additionalCount}`);
+
+    // parsing of domain
+    let offset = 12;
+    const domainParts = [];
+
+    while (msg[offset] !== 0x00) {
+      const length = msg[offset];
+      if (offset + length >= msg.length) {
+        throw new Error("Buffer overrun detected while parsing domain name");
+      }
+      domainParts.push(msg.toString("utf-8", offset + 1, offset + 1 + length));
+      offset += length + 1;
+    }
+
+    // skip the end of the domain name
+    offset += 1;
+
+    //queryType
+    const queryType = msg.readUInt16BE(offset);
+    const queryClass = msg.readUInt16BE(offset + 2);
+
+    const domainName = domainParts.join(".");
+    console.log(`Domain Queried: `, domainName);
+    console.log(`Query Type: `, queryType);
+    console.log(`Query Class: `, queryClass);
   } catch (error) {
     console.error("Error parsing DNS packet:", error.message);
   }
